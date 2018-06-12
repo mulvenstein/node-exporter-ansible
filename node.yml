@@ -8,6 +8,10 @@
       upgrage: yes
       update_cache: yes
       cache_valid_time: 86400 #one day
+  - name: install ufw
+    apt:
+      name: ufw
+      state: present
   - name: create group node_exporter
     group:
       name: node_exporter
