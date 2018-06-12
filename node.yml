@@ -1,0 +1,51 @@
+---
+- hosts: all
+  gather_facts: true
+  tasks:
+  - name: Update and upgrade apt packages
+    become: true
+    apt:
+      upgrage: yes
+      update_cache: yes
+      cache_valid_time: 86400 #one day
+  - name: create group node_exporter
+    group:
+      name: node_exporter
+      state: present
+  - name: Create User node_exporter
+    user:
+      name: node_exporter
+      group: node_exporter
+      createhome: no
+      system: yes
+      state: present
+  - name: create opt dir for node_exporter
+    file:
+      path: /opt/prometheus
+      state: directory
+  - name: download node_exporter
+    get_url:
+      url: https://github.com/prometheus/node_exporter/releases/download/v0.16.0/node_exporter-0.16.0.linux-amd64.tar.gz
+      dest: /opt/node_exporter
+  - name: unarchive node_exporter
+    unarchive:
+      remote_src: yes
+      src: /opt/node_exporter/node_exporter-0.16.0.linux-amd64.tar.gz
+      dest: /opt/node_exporter
+  - name: create symlink for node_exporter
+    file:
+      path: /usr/bin/node_exporter
+      state: link
+      src: /opt/node_exporter/node_exporter-0.16.0.linux-amd64
+      owner: node_exporter
+      group: node_exporter
+  - name: install unit file to systemd
+    template:
+      src: node_exporter.service
+      dest: /etc/systemd/system/node_exporter.service
+  - name: configure systemd to use node_exporter.service
+    systemd:
+      daemon_reload: yes
+      enabled: yes
+      state: started
+      name: node_exporter.service
